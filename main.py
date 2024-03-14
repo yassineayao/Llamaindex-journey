@@ -14,6 +14,8 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     if args.d == 0:
-        from day0 import main
+        from day0.main import RAG
 
-        main()
+        rag = RAG()
+        response = rag.run("What did the author do growing up?")
+        print(response)
