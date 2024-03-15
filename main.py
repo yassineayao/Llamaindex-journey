@@ -19,3 +19,13 @@ if __name__ == "__main__":
         rag = RAG()
         response = rag.run("What did the author do growing up?")
         print(response)
+    elif args.d == 1:
+        from day1.main import RAG
+
+        streaming = True
+        rag = RAG(similarity_top_k=1, streaming=streaming)
+        response = rag.run("What did the author do growing up?")
+        if streaming:
+            response.print_response_stream()  # type: ignore
+        else:
+            print(response)
