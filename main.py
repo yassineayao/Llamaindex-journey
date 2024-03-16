@@ -19,6 +19,7 @@ if __name__ == "__main__":
         rag = RAG()
         response = rag.run("What did the author do growing up?")
         print(response)
+
     elif args.d == 1:
         from day1.main import RAG
 
@@ -29,3 +30,9 @@ if __name__ == "__main__":
             response.print_response_stream()  # type: ignore
         else:
             print(response)
+
+    elif args.d == 2:
+        from day2.main import Chatbot
+
+        chatbot = Chatbot(similarity_top_k=3)
+        chatbot.run()
