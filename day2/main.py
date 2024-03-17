@@ -103,7 +103,7 @@ class Chatbot:
 
         tools = individual_query_ingine_tools + [query_engine_tool]
 
-        self.agent = OpenAIAgent.from_tools(tools, verbose=True)
+        self.agent = OpenAIAgent.from_tools(tools, verbose=True)  # type: ignore
 
     def init_chroma(self):
         """
