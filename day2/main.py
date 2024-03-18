@@ -25,15 +25,7 @@ Settings.chunk_overlap = 200
 
 
 class Chatbot:
-    """
-    Retrieval Augmented Generation (RAG)
-
-    Attributes:
-        DATA_FOLDER_PATH (str): The path to the data folder.
-        PERSIST_DIR (str): The folder for persisting Chroma db.
-        CHROMA_COLLECTION_NAME (str): The name of the Chroma collection.
-        query_engine (BaseQueryEngine): The query engine for performing searches.
-    """
+    """A simple chatbot that interacts with users and provides responses based on indexed documents."""
 
     DATA_FOLDER_PATH: str
     PERSIST_DIR: str
@@ -51,14 +43,14 @@ class Chatbot:
         streaming: bool = True,
     ) -> None:
         """
-        Initializes the RAG with specified parameters.
+        Initialize the chatbot.
 
         Args:
-            data_folder_path (str, optional): The path to the data folder. Defaults to "./day2/data".
-            persist_dir (str, optional): The directory for persisting Chroma db. Defaults to "./day2/storage".
-            chroma_collection_name (str, optional): The name of the Chroma collection. Defaults to "collection".
-            similarity_top_k (int, optional): The number of top similar nodes to retrieve. Defaults to 3.
-            streaming (bool, optional): Whether to stream the LLM response or not. Defaults to True.
+            data_folder_path (str): Path to the folder containing the document data.
+            persist_dir (str): Path to the directory for storing persistent data.
+            chroma_collection_name (str): Name of the Chroma collection.
+            similarity_top_k (int): Number of top similar documents to retrieve.
+            streaming (bool): Whether to enable streaming mode for document retrieval.
         """
         # set base paths
         self.DATA_FOLDER_PATH = data_folder_path
@@ -96,7 +88,7 @@ class Chatbot:
         query_engine_tool = QueryEngineTool(
             query_engine=query_engine,
             metadata=ToolMetadata(
-                name="sub_quertion_query_engine",
+                name="sub_question_query_engine",
                 description="useful for when you want to answer queries that require analyzing multiple SEC 10-K documents for Uber",
             ),
         )
@@ -107,12 +99,11 @@ class Chatbot:
 
     def init_chroma(self):
         """
-        Initializes the Chroma Vector Store and returns it.
+        Initialize Chroma indices for each year.
 
         Returns:
-            ChromaVectorStore: The initialized Chroma Vector Store.
+            Dict[str, VectorStoreIndex]: A dictionary mapping years to their respective VectorStoreIndex objects.
         """
-
         loader = UnstructuredReader()
         all_docs = []
         index_set = {}
@@ -125,9 +116,9 @@ class Chatbot:
                 doc.metadata = {"year": year}
             self.doc_set[year] = year_docs
 
-            chroma_client = chromadb.PersistentClient(f"{self.PERSIST_DIR}/{year}")
+            chroma_client = chromadb.PersistentClient(f"{self.PERSIST_DIR}")
             chroma_collection = chroma_client.get_or_create_collection(
-                self.CHROMA_COLLECTION_NAME
+                f"{self.CHROMA_COLLECTION_NAME}-{year}"
             )
             vector_store = ChromaVectorStore(chroma_collection=chroma_collection)
             index = self.create_index(vector_store)
@@ -139,13 +130,13 @@ class Chatbot:
 
     def create_index(self, vector_store: VectorStore):
         """
-        Creates a new index using the provided vector store and returns it.
+        Create a VectorStoreIndex.
 
         Args:
-            vector_store (VectorStore): The vector store for creating the index.
+            vector_store (VectorStore): The VectorStore object to create the index from.
 
         Returns:
-            VectorStoreIndex: The created index.
+            VectorStoreIndex: The created VectorStoreIndex object.
         """
         storage_context = StorageContext.from_defaults(vector_store=vector_store)
         # Loading data
@@ -159,19 +150,16 @@ class Chatbot:
 
     def load_existing_index(self):
         """
-        Loads an existing index from the provided vector store and returns it.
-
-        Args:
-            vector_store (VectorStore): The vector store containing the index.
+        Load existing Chroma indices.
 
         Returns:
-            VectorStoreIndex: The loaded index.
+            Dict[str, VectorStoreIndex]: A dictionary mapping years to their respective VectorStoreIndex objects.
         """
         index_set = {}
         for year in self.years:
-            chroma_client = chromadb.PersistentClient(f"{self.PERSIST_DIR}/{year}")
+            chroma_client = chromadb.PersistentClient(f"{self.PERSIST_DIR}")
             chroma_collection = chroma_client.get_or_create_collection(
-                self.CHROMA_COLLECTION_NAME
+                f"{self.CHROMA_COLLECTION_NAME}-{year}"
             )
             vector_store = ChromaVectorStore(chroma_collection=chroma_collection)
             index = VectorStoreIndex.from_vector_store(vector_store=vector_store)
@@ -180,6 +168,7 @@ class Chatbot:
         return index_set
 
     def run(self):
+        """Run the chatbot."""
         while True:
             query = input("User: ")
             if query == "q":
@@ -187,6 +176,3 @@ class Chatbot:
             response = self.agent.chat(query)
             print("Agent:", response)
 
-
-if __name__ == "__main__":
-    pass
