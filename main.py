@@ -36,3 +36,9 @@ if __name__ == "__main__":
 
         chatbot = Chatbot(similarity_top_k=3)
         chatbot.run()
+
+    elif args.d == 3:
+        from day3.main import Chatbot
+
+        chatbot = Chatbot(similarity_top_k=3)
+        chatbot.run()
